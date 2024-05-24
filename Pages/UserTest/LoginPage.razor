@@ -1,0 +1,121 @@
+﻿@page "/loginuser"
+@using System.Net.Http.Json
+@using GronOgOlsenFrontEnd.Services
+@using System.Net.Http.Headers
+@using System.Text.Json
+@using UserService.Models
+@inject UserState UserState
+
+
+<h3>Login User</h3>
+
+<div>
+    <div>
+        <label for="APIDomain">API Domain</label>
+        <InputText id="APIDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" />
+    </div>
+    <div>
+        <label for="APIEndpoint">API Endpoint</label>
+        <InputText id="APIEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" />
+    </div>
+    <div>
+        <label for="CombinedAPI">Combined API</label>
+        <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
+    </div>
+
+    <div>
+        <InputText @bind-Value="username" placeholder="Username" />
+    </div>
+    <div>
+        <InputText @bind-Value="password" placeholder="Password" type="password" />
+    </div>
+    <div>
+        <button @onclick="LoginUser">Login</button>
+    </div>
+
+    <div>
+        <InputText @bind-Value="jwtToken" placeholder="JwtToken" readonly />
+    </div>
+</div>
+@if (!string.IsNullOrEmpty(jwtToken))
+{
+    <p>JWT Token has been initialized, you dont have to save it manually</p>
+}
+@if (wrongCredentials)
+{
+    <p>Wrong Credentials</p>
+}
+
+@code {
+    private string apiEndpoint = "user/login";
+    private string username, password, jwtToken;
+    private bool wrongCredentials = false;
+
+    private async Task LoginUser()
+    {
+        var user = new
+        {
+            Username = username,
+            Password = password
+        };
+
+        var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", user);
+        if (response.IsSuccessStatusCode)
+        {
+            // Parse the response to extract the token
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true
+                };
+
+            UserModelDTO userResponse = JsonSerializer.Deserialize<UserModelDTO>(responseBody, options);
+            if (!string.IsNullOrEmpty(userResponse?.AuthToken))
+            {
+                // Set the Bearer token for authorization on subsequent requests
+                WebManager.GetInstance.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userResponse.AuthToken);
+                jwtToken = userResponse.AuthToken;
+                WebManager.GetInstance.jwtToken = userResponse.AuthToken;
+                Console.WriteLine("Token set successfully.");
+                // Now you can make other authenticated requests using the token.
+            }
+            else
+            {
+                Console.WriteLine("Error: Token not found in the response.");
+            }
+            UserState.User = userResponse;
+        }
+        else if(response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            wrongCredentials = true;
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode}");
+        }
+
+    }
+    protected override void OnInitialized()
+    {
+        UserState.UserChanged += OnUserChanged;
+        if (!string.IsNullOrEmpty(UserState.User.Username))
+        {
+            username = UserState.User.Username;
+            jwtToken = UserState.User.AuthToken;
+        }
+    }
+
+    private void OnUserChanged()
+    {
+        // You can trigger StateHasChanged directly or perform other logic
+        username = UserState.User.Username;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        UserState.UserChanged -= OnUserChanged;
+    }
+}

@@ -1,0 +1,139 @@
+﻿@page "/update-lot-price"
+@using System.Net.Http.Json
+@using GronOgOlsenFrontEnd.Models
+@using GronOgOlsenFrontEnd.Services
+@using System.Text.Json
+@inject LotState LotState
+@inject UserState UserState
+
+<h3>Bid (BiddingService)</h3>
+<div>
+    <div>
+        <label for="APIDomain">API Domain</label>
+        <InputText id="APIDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" />
+    </div>
+    <div>
+        <label for="APIEndpoint">API Endpoint</label>
+        <InputText id="APIEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" />
+    </div>
+    <div>
+        <label for="CombinedAPI">Combined API</label>
+        <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
+    </div>
+    <div>
+        <label for="amount">Amount</label>
+        <InputNumber id="amount" @bind-Value="amount" placeholder="Amount" />
+    </div>
+    <div>
+        <label for="bidderId">Bidder ID</label>
+        <InputText id="bidderId" @bind-Value="bidderId" placeholder="Bidder ID" />
+    </div>
+    <div>
+        <label for="lotId">Lot ID</label>
+        <InputText id="lotId" @bind-Value="lotId" placeholder="Lot ID" />
+    </div>
+    <div>
+        <label for="timestamp">Timestamp</label>
+        <input type="datetime" id="timestamp" @bind-value="timestamp" placeholder="Timestamp" />
+    </div>
+    <div>
+        <button @onclick="UpdateLotPrice">Update Lot Price</button>
+    </div>
+    <div>
+        <label for="formattedResult">Formatted Result</label>
+        <textarea id="formattedResult" class="json-textarea" value="@FormattedResult" readonly></textarea>
+    </div>
+</div>
+
+@code {
+    private string apiEndpoint = "api/bidding";
+    private int amount;
+    private string bidderId, lotId;
+    private DateTime timestamp = DateTime.Now;
+    private string Result;
+    private string FormattedResult
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Result))
+                return string.Empty;
+
+            try
+            {
+                var jsonObject = System.Text.Json.JsonSerializer.Deserialize<object>(Result);
+                return System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception)
+            {
+                return Result;
+            }
+        }
+    }
+
+    private async Task UpdateLotPrice()
+    {
+        BidModel bid = new()
+        {
+            Amount = amount,
+            BidderId = bidderId,
+            LotId = lotId,
+            Timestamp = timestamp
+        };
+
+        var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", bid);
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Result = "401 Unauthorized";
+            return;
+        }
+
+        Result = await response.Content.ReadAsStringAsync();
+        try
+        {
+            var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true
+                };
+
+            LotState.Lot = JsonSerializer.Deserialize<LotModel>(Result, options);
+            if (LotState.Lot != null)
+            {
+                Console.WriteLine("Lot successfully deserialized.");
+            }
+            else
+            {
+                Console.WriteLine("Lot deserialized to null.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Lot failed to serialize to UserModel" + ex.Message);
+        }
+    }
+    protected override void OnInitialized()
+    {
+        LotState.LotChanged += OnLotChanged;
+        UserState.UserChanged += OnUserChanged;
+        bidderId = UserState.User.Id;
+    }
+
+    private void OnLotChanged()
+    {
+        // You can trigger StateHasChanged directly or perform other logic
+        lotId = LotState.Lot.LotId;
+        StateHasChanged();
+    }
+    private void OnUserChanged()
+    {
+        // You can trigger StateHasChanged directly or perform other logic
+        bidderId = UserState.User.Id;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        LotState.LotChanged -= OnLotChanged;
+        UserState.UserChanged -= OnUserChanged;
+    }
+}

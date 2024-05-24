@@ -1,0 +1,62 @@
+﻿@page "/get-all-lots"
+@using System.Net.Http.Json
+@using GronOgOlsenFrontEnd.Services
+@using System.Text.Json
+
+<h3>Get All Lots</h3>
+<div>
+    <div>
+        <label for="APIDomain">API Domain</label>
+        <InputText id="APIDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" />
+    </div>
+    <div>
+        <label for="APIEndpoint">API Endpoint</label>
+        <InputText id="APIEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" />
+    </div>
+    <div>
+        <label for="CombinedAPI">Combined API</label>
+        <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
+    </div>
+    <div>
+        <button @onclick="GetAllLots">Get All Lots</button>
+    </div>
+    <div>
+        <label for="formattedResult">Formatted Result</label>
+        <textarea id="formattedResult" class="json-textarea" value="@FormattedResult" readonly></textarea>
+    </div>
+</div>
+
+@code {
+    private string apiEndpoint = "lot";
+    private string Result;
+    private string FormattedResult
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Result))
+                return string.Empty;
+
+            try
+            {
+                var jsonObject = System.Text.Json.JsonSerializer.Deserialize<object>(Result);
+                return System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception)
+            {
+                return Result;
+            }
+        }
+    }
+
+    private async Task GetAllLots()
+    {
+        var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}");
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Result = "401 Unauthorized";
+            return;
+        }
+
+        Result = await response.Content.ReadAsStringAsync();
+    }
+}
