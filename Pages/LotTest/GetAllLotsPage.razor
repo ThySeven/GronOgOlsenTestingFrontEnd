@@ -50,6 +50,7 @@
 
     private async Task GetAllLots()
     {
+        try{
         var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}");
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
@@ -58,5 +59,10 @@
         }
 
         Result = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
 }

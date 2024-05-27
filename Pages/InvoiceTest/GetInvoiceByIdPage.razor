@@ -50,35 +50,42 @@
 
     private async Task GetInvoiceById()
     {
-        var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{invoiceId}");
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
-        }
-
-        Result = await response.Content.ReadAsStringAsync();
         try
         {
-            var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true
-                };
-
-            InvoiceState.Invoice = JsonSerializer.Deserialize<InvoiceModel>(Result, options);
-            if (InvoiceState.Invoice != null)
+            var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{invoiceId}");
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                Console.WriteLine("Invoice successfully deserialized.");
+                Result = "401 Unauthorized";
+                return;
             }
-            else
+
+            Result = await response.Content.ReadAsStringAsync();
+            try
             {
-                Console.WriteLine("Invoice deserialized to null.");
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                InvoiceState.Invoice = JsonSerializer.Deserialize<InvoiceModel>(Result, options);
+                if (InvoiceState.Invoice != null)
+                {
+                    Console.WriteLine("Invoice successfully deserialized.");
+                }
+                else
+                {
+                    Console.WriteLine("Invoice deserialized to null.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Invoice failed to serialize to InvoiceModel: " + ex.Message);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Invoice failed to serialize to InvoiceModel: " + ex.Message);
+            Result = ex.Message;
         }
     }
     protected override void OnInitialized()

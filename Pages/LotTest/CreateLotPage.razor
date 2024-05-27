@@ -75,50 +75,57 @@
 
     private async Task CreateLot()
     {
-        LotModel lot = new()
-        {
-            LotId = Guid.NewGuid().ToString(),
-            LotName = lotName,
-            Location = location,
-            OnlineAuction = onlineAuction,
-            StartingPrice = startingPrice,
-            MinimumBid = minimumBid,
-            LotCreationTime = lotCreationTime,
-            LotEndTime = lotEndTime,
-            Open = true
-        };
-
-        var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", lot);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
-        }
-
-        Result = await response.Content.ReadAsStringAsync();
         try
         {
-            var options = new JsonSerializerOptions
+            LotModel lot = new()
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true
+                    LotId = Guid.NewGuid().ToString(),
+                    LotName = lotName,
+                    Location = location,
+                    OnlineAuction = onlineAuction,
+                    StartingPrice = startingPrice,
+                    MinimumBid = minimumBid,
+                    LotCreationTime = lotCreationTime,
+                    LotEndTime = lotEndTime,
+                    Open = true
                 };
 
-            LotState.Lot = JsonSerializer.Deserialize<LotModel>(Result, options);
-            if (LotState.Lot != null)
+            var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", lot);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                Console.WriteLine("Lot successfully deserialized.");
+                Result = "401 Unauthorized";
+                return;
             }
-            else
+
+            Result = await response.Content.ReadAsStringAsync();
+            try
             {
-                Console.WriteLine("Lot deserialized to null.");
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                LotState.Lot = JsonSerializer.Deserialize<LotModel>(Result, options);
+                if (LotState.Lot != null)
+                {
+                    Console.WriteLine("Lot successfully deserialized.");
+                }
+                else
+                {
+                    Console.WriteLine("Lot deserialized to null.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Lot failed to serialize to UserModel" + ex.Message);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Lot failed to serialize to UserModel" + ex.Message);
+            Result = ex.Message;
         }
-        
+
     }
     protected override void OnInitialized()
     {

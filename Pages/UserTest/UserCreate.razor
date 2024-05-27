@@ -51,49 +51,56 @@
     }
     private async Task CreateUser()
     {
-        var user = new
-        {
-            Id = userId,
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email,
-            Username = username,
-            Password = password,
-            Address = address,
-            PhoneNumber = phoneNumber,
-            Verified = verified
-        };
-
-        var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", user);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
-        }
-
-        Result = await response.Content.ReadAsStringAsync();
-
         try
         {
-            var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true
-                };
+            var user = new
+            {
+                Id = userId,
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                Username = username,
+                Password = password,
+                Address = address,
+                PhoneNumber = phoneNumber,
+                Verified = verified
+            };
 
-            UserState.User = JsonSerializer.Deserialize<UserModelDTO>(Result, options);
-            if (UserState.User != null)
+            var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", user);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                Console.WriteLine("User successfully deserialized.");
+                Result = "401 Unauthorized";
+                return;
             }
-            else
+
+            Result = await response.Content.ReadAsStringAsync();
+
+            try
             {
-                Console.WriteLine("User deserialized to null.");
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                UserState.User = JsonSerializer.Deserialize<UserModelDTO>(Result, options);
+                if (UserState.User != null)
+                {
+                    Console.WriteLine("User successfully deserialized.");
+                }
+                else
+                {
+                    Console.WriteLine("User deserialized to null.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("User failed to serialize to UserModelDTO" + ex.Message);
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            Console.WriteLine("User failed to serialize to UserModelDTO" + ex.Message);
+            Result = ex.Message;
         }
     }
     protected override void OnInitialized()

@@ -72,43 +72,49 @@
 
     private async Task UpdateLotPrice()
     {
-        BidModel bid = new()
-        {
-            Amount = amount,
-            BidderId = bidderId,
-            LotId = lotId,
-            Timestamp = timestamp
-        };
-
-        var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", bid);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
-        }
-
-        Result = await response.Content.ReadAsStringAsync();
-        try
-        {
-            var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true
-                };
-
-            LotState.Lot = JsonSerializer.Deserialize<LotModel>(Result, options);
-            if (LotState.Lot != null)
+        try{
+            BidModel bid = new()
             {
-                Console.WriteLine("Lot successfully deserialized.");
+                Amount = amount,
+                BidderId = bidderId,
+                LotId = lotId,
+                Timestamp = timestamp
+            };
+
+            var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", bid);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
             }
-            else
+
+            Result = await response.Content.ReadAsStringAsync();
+            try
             {
-                Console.WriteLine("Lot deserialized to null.");
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                LotState.Lot = JsonSerializer.Deserialize<LotModel>(Result, options);
+                if (LotState.Lot != null)
+                {
+                    Console.WriteLine("Lot successfully deserialized.");
+                }
+                else
+                {
+                    Console.WriteLine("Lot deserialized to null.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Lot failed to serialize to UserModel" + ex.Message);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Lot failed to serialize to UserModel" + ex.Message);
+            Result = ex.Message;
         }
     }
     protected override void OnInitialized()

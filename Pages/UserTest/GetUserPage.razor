@@ -44,16 +44,23 @@
     }
     private async Task GetUser()
     {
-        var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{userId}");
-
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        try
         {
-            Result = "401 Unauthorized";
-            return;
-        }
+            var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{userId}");
 
-        var responseObject = await response.Content.ReadFromJsonAsync<UserModelDTO>();
-        Result = JsonSerializer.Serialize(responseObject);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
+
+            var responseObject = await response.Content.ReadFromJsonAsync<UserModelDTO>();
+            Result = JsonSerializer.Serialize(responseObject);
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
     protected override void OnInitialized()
     {

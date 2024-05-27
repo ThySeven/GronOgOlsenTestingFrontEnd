@@ -92,27 +92,33 @@
 
     private async Task UpdateLot()
     {
-        LotModel lot = new()
-        {
-            LotId = lotId,
-            LotName = lotName,
-            Location = location,
-            OnlineAuction = onlineAuction,
-            StartingPrice = startingPrice,
-            MinimumBid = minimumBid,
-            LotCreationTime = lotCreationTime,
-            LotEndTime = lotEndTime,
-            Open = open
-        };
+        try{
+            LotModel lot = new()
+            {
+                LotId = lotId,
+                LotName = lotName,
+                Location = location,
+                OnlineAuction = onlineAuction,
+                StartingPrice = startingPrice,
+                MinimumBid = minimumBid,
+                LotCreationTime = lotCreationTime,
+                LotEndTime = lotEndTime,
+                Open = open
+            };
 
-        var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", lot);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
+            var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", lot);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
+
+            Result = await response.Content.ReadAsStringAsync();
         }
-
-        Result = await response.Content.ReadAsStringAsync();
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
     protected override void OnInitialized()
     {

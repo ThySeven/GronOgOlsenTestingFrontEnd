@@ -85,27 +85,34 @@
 
     private async Task SendParcelInfo()
     {
-        var parcelInfo = new
+        try
         {
-            Weight = weight,
-            Reference = reference,
-            Comment = comment,
-            CashService = cashService,
-            AddOnLiabilityService = addOnLiabilityService,
-            WeightCategory = weightCategory,
-            Height = height,
-            Width = width,
-            Length = length
-        };
+            var parcelInfo = new
+            {
+                Weight = weight,
+                Reference = reference,
+                Comment = comment,
+                CashService = cashService,
+                AddOnLiabilityService = addOnLiabilityService,
+                WeightCategory = weightCategory,
+                Height = height,
+                Width = width,
+                Length = length
+            };
 
-        var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", parcelInfo);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
+            var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", parcelInfo);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
+
+            Result = await response.Content.ReadAsStringAsync();
         }
-
-        Result = await response.Content.ReadAsStringAsync();
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
     protected override void OnInitialized()
     {

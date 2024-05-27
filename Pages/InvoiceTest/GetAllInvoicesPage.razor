@@ -47,13 +47,20 @@
 
     private async Task GetAllInvoices()
     {
-        var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}");
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        try
         {
-            Result = "401 Unauthorized";
-            return;
-        }
+            var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}");
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
 
-        Result = await response.Content.ReadAsStringAsync();
+            Result = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
 }

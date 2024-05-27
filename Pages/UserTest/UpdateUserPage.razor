@@ -57,48 +57,55 @@
     }
     private async Task UpdateUser()
     {
-        var user = new
+        try
         {
-            Id = userId,
-            Username = username,
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email,
-            Address = address,
-            PhoneNumber = phoneNumber
-        };
-
-        var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", user);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            Result = "401 Unauthorized";
-            return;
-        }
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-
-        var options = new JsonSerializerOptions
+            var user = new
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true
+                Id = userId,
+                Username = username,
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                Address = address,
+                PhoneNumber = phoneNumber
             };
-        UserModelDTO updatedUser = JsonSerializer.Deserialize<UserModelDTO>(responseBody, options);
 
-        if (!string.IsNullOrEmpty(updatedUser?.AuthToken))
-        {
-            // Set the Bearer token for authorization on subsequent requests
-            WebManager.GetInstance.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", updatedUser.AuthToken);
-            jwtToken = updatedUser.AuthToken;
-            WebManager.GetInstance.jwtToken = updatedUser.AuthToken;
-            Console.WriteLine("Token set successfully.");
-            // Now you can make other authenticated requests using the token.
+            var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", user);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true
+                };
+            UserModelDTO updatedUser = JsonSerializer.Deserialize<UserModelDTO>(responseBody, options);
+
+            if (!string.IsNullOrEmpty(updatedUser?.AuthToken))
+            {
+                // Set the Bearer token for authorization on subsequent requests
+                WebManager.GetInstance.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", updatedUser.AuthToken);
+                jwtToken = updatedUser.AuthToken;
+                WebManager.GetInstance.jwtToken = updatedUser.AuthToken;
+                Console.WriteLine("Token set successfully.");
+                // Now you can make other authenticated requests using the token.
+            }
+            else
+            {
+                Console.WriteLine("Error: Token not found in the response.");
+            }
+            UserState.User = updatedUser;
+            Result = await response.Content.ReadAsStringAsync();
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Error: Token not found in the response.");
+            Result = ex.Message;
         }
-        UserState.User = updatedUser;
-        Result = await response.Content.ReadAsStringAsync();
     }
 
     private static string ExtractToken(string responseBody)

@@ -70,23 +70,30 @@
 
     private async Task UpdateInvoice()
     {
-        InvoiceModel invoice = new()
-            {
-                Id = invoiceId,
-                Price = price,
-                Address = address,
-                Email = email,
-                Description = description
-            };
-
-        var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", invoice);
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        try
         {
-            Result = "401 Unauthorized";
-            return;
-        }
+            InvoiceModel invoice = new()
+                {
+                    Id = invoiceId,
+                    Price = price,
+                    Address = address,
+                    Email = email,
+                    Description = description
+                };
 
-        Result = await response.Content.ReadAsStringAsync();
+            var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", invoice);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
+
+            Result = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
 
     }
     protected override void OnInitialized()

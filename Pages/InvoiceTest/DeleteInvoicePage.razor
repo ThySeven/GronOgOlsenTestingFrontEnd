@@ -50,14 +50,21 @@
 
     private async Task DeleteInvoice()
     {
-        var response = await WebManager.GetInstance.HttpClient.DeleteAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{invoiceId}");
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        try
         {
-            Result = "401 Unauthorized";
-            return;
-        }
+            var response = await WebManager.GetInstance.HttpClient.DeleteAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{invoiceId}");
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
 
-        Result = await response.Content.ReadAsStringAsync();
+            Result = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
     protected override void OnInitialized()
     {

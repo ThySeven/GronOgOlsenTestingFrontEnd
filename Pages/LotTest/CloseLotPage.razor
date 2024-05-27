@@ -57,6 +57,8 @@
 
     private async Task CloseLot()
     {
+        try
+        {
         var response = await WebManager.GetInstance.HttpClient.PutAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", lotId);
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
@@ -65,6 +67,11 @@
         }
 
         Result = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
     }
     protected override void OnInitialized()
     {
