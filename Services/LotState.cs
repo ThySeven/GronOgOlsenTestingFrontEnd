@@ -1,5 +1,4 @@
 ﻿using GronOgOlsenFrontEnd.Models;
-using UserService.Models;
 
 namespace GronOgOlsenFrontEnd.Services
 {

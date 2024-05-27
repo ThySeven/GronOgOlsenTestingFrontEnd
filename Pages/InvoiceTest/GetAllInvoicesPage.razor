@@ -1,0 +1,59 @@
+﻿@page "/get-all-invoices"
+@using System.Net.Http.Json
+@using GronOgOlsenFrontEnd.Models
+@using GronOgOlsenFrontEnd.Services
+@using System.Text.Json
+@inject InvoiceState InvoiceState
+
+<h3>Get All Invoices</h3>
+<div>
+    <label for="apiDomain">API Domain</label>
+    <InputText id="apiDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" /><br />
+    <label for="apiEndpoint">API Endpoint</label>
+    <InputText id="apiEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" /><br />
+    <label for="combinedAPI">Combined API</label>
+    <input id="combinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
+    <br /><br />
+    <div>
+        <button @onclick="GetAllInvoices">Get All Invoices</button>
+    </div>
+    <div>
+        <label for="formattedResult">Formatted Result</label>
+        <textarea id="formattedResult" class="json-textarea" value="@FormattedResult" readonly />
+    </div>
+</div>
+
+@code {
+    private string apiEndpoint = "invoice/getAll";
+    private string Result;
+    private string FormattedResult
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Result))
+                return string.Empty;
+
+            try
+            {
+                var jsonObject = System.Text.Json.JsonSerializer.Deserialize<object>(Result);
+                return System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception)
+            {
+                return Result;
+            }
+        }
+    }
+
+    private async Task GetAllInvoices()
+    {
+        var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}");
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Result = "401 Unauthorized";
+            return;
+        }
+
+        Result = await response.Content.ReadAsStringAsync();
+    }
+}

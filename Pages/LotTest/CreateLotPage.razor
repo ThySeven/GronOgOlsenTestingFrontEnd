@@ -84,7 +84,8 @@
             StartingPrice = startingPrice,
             MinimumBid = minimumBid,
             LotCreationTime = lotCreationTime,
-            LotEndTime = lotEndTime
+            LotEndTime = lotEndTime,
+            Open = true
         };
 
         var response = await WebManager.GetInstance.HttpClient.PostAsJsonAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}", lot);
