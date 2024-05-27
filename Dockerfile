@@ -23,9 +23,6 @@ WORKDIR /usr/share/nginx/html
 # Copy the published Blazor app
 COPY --from=build /app/publish/wwwroot .
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
 # Expose port 80 to the outside world
 EXPOSE 80
 
