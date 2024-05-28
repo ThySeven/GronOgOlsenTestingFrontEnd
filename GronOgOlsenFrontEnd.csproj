@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <None Update="Layout\NavMenu.razor.css">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
