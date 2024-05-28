@@ -1,0 +1,141 @@
+﻿@page "/schema-list"
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@inject HttpClient Http
+
+<h3>Schema Documents</h3>
+@if (schemas == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="schema-container">
+        @foreach (var schema in schemas)
+        {
+            <div class="schema-item">
+                <button @onclick="(args) => Loadschema(schema.Url)">@schema.Name</button>
+            </div>
+        }
+    </div>
+}
+@if (!string.IsNullOrEmpty(selectedschemaJson))
+{
+    <pre>@((MarkupString)selectedschemaJsonFormatted)</pre>
+}
+
+<style>
+    .schema-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding-bottom: 2rem;
+    }
+
+    .schema-item {
+        display: flex;
+        align-items: center;
+    }
+    .json-key {
+        color: brown;
+    }
+
+    .json-string {
+        color: olive;
+    }
+
+    .json-number {
+        color: darkorange;
+    }
+
+    .json-boolean {
+        color: blue;
+    }
+
+    .json-null {
+        color: magenta;
+    }
+
+    pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border: 1px solid #ccc;
+        overflow-x: auto;
+    }
+</style>
+
+@code {
+    private List<schemaInfo> schemas;
+    private string selectedschemaJson;
+    private string? selectedschemaJsonFormatted;
+
+    protected override void OnInitialized()
+    {
+        schemas = new List<schemaInfo>
+        {
+            new schemaInfo { Name = "Bid Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/BidModel.json" },
+            new schemaInfo { Name = "Invoice Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/InvoiceModel.json" },
+            new schemaInfo { Name = "Login Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/LoginModel.json" },
+            new schemaInfo { Name = "Lot Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/LotModel.json" },
+            new schemaInfo { Name = "Mail Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/MailModel.json" },
+            new schemaInfo { Name = "Notification Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/NotificationModel.json" },
+            new schemaInfo { Name = "Parcel Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/ParcelModel.json" },
+            new schemaInfo { Name = "PasswordUpdateRecord", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/PasswordUpdateRecord.json" },
+            new schemaInfo { Name = "Payment Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/PaymentModel.json" },
+            new schemaInfo { Name = "User Model", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/UserModel.json" },
+            new schemaInfo { Name = "User Model DTO", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/Schema/UserModelDTO.json" }
+
+
+
+        };
+    }
+
+    private async Task Loadschema(string url)
+    {
+        selectedschemaJson = await Http.GetStringAsync(url);
+        FormatAndColorizeJson();
+    }
+
+    private void FormatAndColorizeJson()
+    {
+        try
+        {
+            var jsonElement = JsonDocument.Parse(selectedschemaJson).RootElement;
+            var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+            var formattedJson = JsonSerializer.Serialize(jsonElement, options);
+            selectedschemaJsonFormatted = ColorizeJson(formattedJson);
+        }
+        catch (JsonException ex)
+        {
+            selectedschemaJsonFormatted = $"Error parsing JSON: {ex.Message}";
+        }
+    }
+
+    private string ColorizeJson(string json)
+    {
+        // Regex patterns
+        var regexKey = new Regex("\"(\\w+)\":", RegexOptions.Compiled);
+        var regexString = new Regex("\": \"(.*?)\"", RegexOptions.Compiled);
+        var regexNumber = new Regex(": (\\d+\\.?\\d*)", RegexOptions.Compiled);
+        var regexBoolean = new Regex(": (true|false)", RegexOptions.Compiled);
+        var regexNull = new Regex(": (null)", RegexOptions.Compiled);
+
+        // Apply coloring
+        json = regexKey.Replace(json, "<span class=\"json-key\">\"$1\"</span>:");
+        json = regexString.Replace(json, "\": <span class=\"json-string\">\"$1\"</span>");
+        json = regexNumber.Replace(json, ": <span class=\"json-number\">$1</span>");
+        json = regexBoolean.Replace(json, ": <span class=\"json-boolean\">$1</span>");
+        json = regexNull.Replace(json, ": <span class=\"json-null\">$1</span>");
+
+        return json;
+    }
+
+    public class schemaInfo
+    {
+        public string Name { get; set; }
+        public string Url { get; set; }
+    }
+}

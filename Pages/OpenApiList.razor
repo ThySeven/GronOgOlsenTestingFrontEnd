@@ -1,0 +1,117 @@
+﻿@page "/openapi-list"
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@inject HttpClient Http
+
+<h3>OpenAPI Documents</h3>
+@if (openApis == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="openapi-container">
+        @foreach (var openApi in openApis)
+        {
+            <div class="openapi-item">
+                <button @onclick="(args) => LoadOpenApi(openApi.Url)">@openApi.Name</button>
+            </div>
+        }
+    </div>
+}
+@if (!string.IsNullOrEmpty(selectedOpenApiJson))
+{
+    <pre>@((MarkupString)selectedOpenApiJsonFormatted)</pre>
+}
+
+<style>
+    .openapi-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding-bottom: 2rem;
+    }
+
+    .openapi-item {
+        display: flex;
+        align-items: center;
+    }
+    .json-key { color: brown; }
+    .json-string { color: olive; }
+    .json-number { color: darkorange; }
+    .json-boolean { color: blue; }
+    .json-null { color: magenta; }
+
+    pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border: 1px solid #ccc;
+        overflow-x: auto;
+    }
+</style>
+
+@code {
+    private List<OpenApiInfo> openApis;
+    private string selectedOpenApiJson;
+    private string? selectedOpenApiJsonFormatted;
+
+    protected override void OnInitialized()
+    {
+        openApis = new List<OpenApiInfo>
+        {
+            new OpenApiInfo { Name = "Bidding Service", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/OpenAPI/BiddingService.json" },
+            new OpenApiInfo { Name = "Invoice Service", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/OpenAPI/InvoiceService.json" },
+            new OpenApiInfo { Name = "Lot Service", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/OpenAPI/LotService.json" },
+            new OpenApiInfo { Name = "User Service", Url = "https://raw.githubusercontent.com/ThySeven/AuctionCoreServices/main/OpenAPI/UserService.json" }
+        };
+    }
+
+    private async Task LoadOpenApi(string url)
+    {
+        selectedOpenApiJson = await Http.GetStringAsync(url);
+        FormatAndColorizeJson();
+    }
+
+    private void FormatAndColorizeJson()
+    {
+        try
+        {
+            var jsonElement = JsonDocument.Parse(selectedOpenApiJson).RootElement;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            var formattedJson = JsonSerializer.Serialize(jsonElement, options);
+            selectedOpenApiJsonFormatted = ColorizeJson(formattedJson);
+        }
+        catch (JsonException ex)
+        {
+            selectedOpenApiJsonFormatted = $"Error parsing JSON: {ex.Message}";
+        }
+    }
+
+    private string ColorizeJson(string json)
+    {
+        // Regex patterns
+        var regexKey = new Regex("\"(\\w+)\":", RegexOptions.Compiled);
+        var regexString = new Regex("\": \"(.*?)\"", RegexOptions.Compiled);
+        var regexNumber = new Regex(": (\\d+\\.?\\d*)", RegexOptions.Compiled);
+        var regexBoolean = new Regex(": (true|false)", RegexOptions.Compiled);
+        var regexNull = new Regex(": (null)", RegexOptions.Compiled);
+
+        // Apply coloring
+        json = regexKey.Replace(json, "<span class=\"json-key\">\"$1\"</span>:");
+        json = regexString.Replace(json, "\": <span class=\"json-string\">\"$1\"</span>");
+        json = regexNumber.Replace(json, ": <span class=\"json-number\">$1</span>");
+        json = regexBoolean.Replace(json, ": <span class=\"json-boolean\">$1</span>");
+        json = regexNull.Replace(json, ": <span class=\"json-null\">$1</span>");
+
+        return json;
+    }
+
+    public class OpenApiInfo
+    {
+        public string Name { get; set; }
+        public string Url { get; set; }
+    }
+}
