@@ -65,6 +65,10 @@
     protected override void OnInitialized()
     {
         UserState.UserChanged += OnUserChanged;
+        if (UserState.User != null)
+        {
+            userId = UserState.User.Id;
+        }
     }
 
     private void OnUserChanged()

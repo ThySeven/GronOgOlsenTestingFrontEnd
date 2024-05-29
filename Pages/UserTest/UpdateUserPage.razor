@@ -134,6 +134,15 @@
     protected override void OnInitialized()
     {
         UserState.UserChanged += OnUserChanged;
+        if (UserState.User != null)
+        {
+        userId = UserState.User.Id;
+        firstName = UserState.User.FirstName;
+        lastName = UserState.User.LastName;
+        email = UserState.User.Email;
+        username = UserState.User.Username;
+        address = UserState.User.Address;
+        phoneNumber = UserState.User.PhoneNumber;        }
     }
 
     private void OnUserChanged()
