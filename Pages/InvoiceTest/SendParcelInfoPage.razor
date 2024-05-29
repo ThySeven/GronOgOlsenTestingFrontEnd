@@ -11,8 +11,8 @@
     <InputText id="apiDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" /><br />
     <label for="apiEndpoint">API Endpoint</label>
     <InputText id="apiEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" /><br />
-    <label for="combinedAPI">Combined API</label>
-    <input id="combinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
+    <label for="CombinedAPI">Combined API</label>
+    <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
     <br /><br />
     <div>
         <label for="weight">Weight</label>

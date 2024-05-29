@@ -1,33 +1,40 @@
-﻿@page "/get-invoice-by-id"
+﻿@page "/get-auction-by-id"
 @using System.Net.Http.Json
 @using GronOgOlsenFrontEnd.Models
 @using GronOgOlsenFrontEnd.Services
 @using System.Text.Json
-@inject InvoiceState InvoiceState
+@inject LotState LotState
 
-<h3>Get Invoice by ID</h3>
+<h3>Get Lot by ID</h3>
 <div>
-    <label for="apiDomain">API Domain</label>
-    <InputText id="apiDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" /><br />
-    <label for="apiEndpoint">API Endpoint</label>
-    <InputText id="apiEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" /><br />
-    <label for="CombinedAPI">Combined API</label>
-    <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
-    <br /><br />
-    <label for="invoiceId">Invoice ID</label>
-    <InputText id="invoiceId" @bind-Value="invoiceId" placeholder="Invoice ID" /><br />
     <div>
-        <button @onclick="GetInvoiceById">Get Invoice</button>
+        <label for="APIDomain">API Domain</label>
+        <InputText id="APIDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" />
+    </div>
+    <div>
+        <label for="APIEndpoint">API Endpoint</label>
+        <InputText id="APIEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" />
+    </div>
+    <div>
+        <label for="CombinedAPI">Combined API</label>
+        <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint + "/" + lotId)" readonly />
+    </div>
+    <div>
+        <label for="lotId">Lot ID</label>
+        <InputText id="lotId" @bind-Value="lotId" placeholder="Lot ID" />
+    </div>
+    <div>
+        <button @onclick="GetLotById">Get Lot by ID</button>
     </div>
     <div>
         <label for="formattedResult">Formatted Result</label>
-        <textarea id="formattedResult" class="json-textarea" value="@FormattedResult" readonly />
+        <textarea id="formattedResult" class="json-textarea" value="@FormattedResult" readonly></textarea>
     </div>
 </div>
 
 @code {
-    private string apiEndpoint = "invoice/getById";
-    private string invoiceId;
+    private string apiEndpoint = "api/legal/auctions";
+    private string lotId;
     private string Result;
     private string FormattedResult
     {
@@ -48,11 +55,11 @@
         }
     }
 
-    private async Task GetInvoiceById()
+    private async Task GetLotById()
     {
         try
         {
-            var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{invoiceId}");
+            var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{lotId}");
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 Result = "401 Unauthorized";
@@ -68,19 +75,19 @@
                         PropertyNameCaseInsensitive = true
                     };
 
-                InvoiceState.Invoice = JsonSerializer.Deserialize<InvoiceModel>(Result, options);
-                if (InvoiceState.Invoice != null)
+                LotState.Lot = JsonSerializer.Deserialize<LotModel>(Result, options);
+                if (LotState.Lot != null)
                 {
-                    Console.WriteLine("Invoice successfully deserialized.");
+                    Console.WriteLine("Lot successfully deserialized.");
                 }
                 else
                 {
-                    Console.WriteLine("Invoice deserialized to null.");
+                    Console.WriteLine("Lot deserialized to null.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Invoice failed to serialize to InvoiceModel: " + ex.Message);
+                Console.WriteLine("Lot failed to serialize to UserModel" + ex.Message);
             }
         }
         catch (Exception ex)
@@ -90,18 +97,18 @@
     }
     protected override void OnInitialized()
     {
-        InvoiceState.InvoiceChanged += OnInvoiceChanged;
+        LotState.LotChanged += OnLotChanged;
     }
 
-    private void OnInvoiceChanged()
+    private void OnLotChanged()
     {
         // You can trigger StateHasChanged directly or perform other logic
-        invoiceId = InvoiceState.Invoice.Id;
+        lotId = LotState.Lot.LotId;
         StateHasChanged();
     }
 
     public void Dispose()
     {
-        InvoiceState.InvoiceChanged -= OnInvoiceChanged;
+        LotState.LotChanged -= OnLotChanged;
     }
 }

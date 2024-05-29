@@ -1,0 +1,82 @@
+﻿@page "/interoperabilitygetuser"
+@using System.Net.Http.Headers
+@using GronOgOlsenFrontEnd.Models
+@using GronOgOlsenFrontEnd.Services
+@using System.Text.Json
+@using UserService.Models
+@inject UserState UserState
+
+
+<h3>Get User by ID</h3>
+
+<div>
+    <label for="APIDomain">API Domain</label>
+    <InputText id="APIDomain" @bind-Value="WebManager.GetInstance.ServerUrl" placeholder="API Domain" /><br />
+    <label for="APIEndpoint">API Endpoint</label>
+    <InputText id="APIEndpoint" @bind-Value="apiEndpoint" placeholder="API Endpoint" /><br />
+    <label for="CombinedAPI">API Domain</label>
+    <input id="CombinedAPI" type="text" value="@(WebManager.GetInstance.ServerUrl + "/" + apiEndpoint)" readonly />
+    <br /><br />
+    <InputText @bind-Value="userId" placeholder="User Id" />
+    <button @onclick="GetUser">Get User</button>
+    <textarea class="json-textarea" value="@FormattedResult" readonly />
+</div>
+
+@code {
+    private string apiEndpoint = "api/legal/users";
+    private string userId, Result;
+    private string FormattedResult
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Result))
+                return string.Empty;
+
+            try
+            {
+                var jsonObject = System.Text.Json.JsonSerializer.Deserialize<object>(Result);
+                return System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception)
+            {
+                return Result;
+            }
+        }
+    }
+    private async Task GetUser()
+    {
+        try
+        {
+            var response = await WebManager.GetInstance.HttpClient.GetAsync($"{WebManager.GetInstance.ServerUrl}/{apiEndpoint}/{userId}");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Result = "401 Unauthorized";
+                return;
+            }
+
+            var responseObject = await response.Content.ReadFromJsonAsync<UserModelInteropablility>();
+            Result = JsonSerializer.Serialize(responseObject);
+        }
+        catch (Exception ex)
+        {
+            Result = ex.Message;
+        }
+    }
+    protected override void OnInitialized()
+    {
+        UserState.UserChanged += OnUserChanged;
+    }
+
+    private void OnUserChanged()
+    {
+        // You can trigger StateHasChanged directly or perform other logic
+        userId = UserState.User.Id;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        UserState.UserChanged -= OnUserChanged;
+    }
+}
