@@ -19,6 +19,7 @@ namespace GronOgOlsenFrontEnd
             builder.Services.AddSingleton<InvoiceState>();
 
 
+
             await builder.Build().RunAsync();
         }
     }
