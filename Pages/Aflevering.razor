@@ -1,0 +1,17 @@
+@page "/aflevering"
+@inject IJSRuntime JS
+
+<h3>PoC Rapport</h3>
+
+<div id="pdfCanvasContainer"></div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(100);
+            await JS.InvokeVoidAsync("pdfViewer.loadPdf", "https://raw.githubusercontent.com/ThySeven/Aflevering/main/GrønOgOlsenThySeven.pdf", "pdfCanvasContainer");
+        }
+    }
+}
